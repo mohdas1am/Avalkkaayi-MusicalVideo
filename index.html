@@ -1,93 +1,373 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Button Page</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Music Player</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Courier+Prime&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<style>
-body{
-    margin:0;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:#111;
-    color:white;
-    font-family:Arial, sans-serif;
-    text-align:center;
-}
-#app{
-    padding:20px;
-}
-button{
-    padding:15px 30px;
-    font-size:20px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    background:#00c853;
-    color:white;
-}
-button:hover{
-    opacity:0.9;
-}
-</style>
-</head>
-
-<body>
-
-<div id="app">Loading...</div>
-
-<script>
-const app = document.getElementById("app");
-
-const supabase = window.supabase.createClient(
-  "https://jhfqjmpjmjuzrpgqzfnz.supabase.co",
-  "sb_publishable_zscaRA42u3LhgWdJ73zuOw_TFkuDorT"
-);
-
-function showRemoved(){
-    document.body.style.background = "#fff";
-    document.body.style.color = "#000";
-    app.innerHTML = "<h1>The music is removed by the author</h1>";
-}
-
-function showButton(){
-    app.innerHTML = `
-        <button onclick="removeNow()">▶ Play</button>
-    `;
-}
-
-async function loadState(){
-    const { data, error } = await supabase
-        .from("music_state")
-        .select("removed")
-        .eq("id",1)
-        .single();
-
-    if(error){
-        app.innerHTML = "Error: " + error.message;
-        return;
+    :root {
+      --bg: #0c0c0e;
+      --surface: #141418;
+      --accent: #e8c97a;
+      --text: #e8e4dc;
+      --muted: #6b6660;
     }
 
-    if(data.removed) showRemoved();
-    else showButton();
-}
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier Prime', monospace;
+      color: var(--text);
+      overflow: hidden;
+    }
 
-async function removeNow(){
-    await supabase
-        .from("music_state")
-        .update({ removed:true })
-        .eq("id",1);
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
 
-    showRemoved();
-}
+    .scene {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
 
-loadState();
-setInterval(loadState, 2000);
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(232, 201, 122, 0.15);
+      border-radius: 2px;
+      padding: 3rem 3.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+      width: 340px;
+      box-shadow: 0 8px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.03);
+      transition: border-color 0.6s;
+    }
+
+    .card.removed { border-color: rgba(122, 32, 32, 0.3); }
+
+    /* Loading */
+    #loading-view { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+
+    .loading-dots { display: flex; gap: 6px; }
+    .loading-dots span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: blink 1.2s ease infinite;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes blink {
+      0%,80%,100% { opacity: 0.2; }
+      40% { opacity: 1; }
+    }
+
+    .loading-text {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Vinyl */
+    .vinyl-wrap { position: relative; width: 120px; height: 120px; }
+
+    .vinyl {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, #1a1a1a 18%, transparent 18%),
+        repeating-radial-gradient(circle at 50% 50%, #1c1c1e 0px, #111113 2px, #1c1c1e 4px);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.6);
+      animation: spin 4s linear infinite;
+      animation-play-state: paused;
+    }
+
+    .vinyl::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px #111113, 0 0 0 5px rgba(232,201,122,0.2);
+    }
+
+    .vinyl.spinning { animation-play-state: running; }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* Waveform */
+    .waveform { display: flex; align-items: center; gap: 3px; height: 28px; }
+
+    .bar {
+      width: 3px; border-radius: 2px;
+      background: var(--accent);
+      opacity: 0.3;
+      transform-origin: bottom;
+      transition: opacity 0.4s;
+    }
+
+    .bar.active {
+      opacity: 1;
+      animation: bounce var(--d, 0.6s) ease-in-out infinite alternate;
+    }
+
+    @keyframes bounce {
+      from { transform: scaleY(0.2); }
+      to   { transform: scaleY(1); }
+    }
+
+    /* Track info */
+    .track-info { text-align: center; }
+
+    .track-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .track-artist {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    /* Play button */
+    .play-btn {
+      position: relative;
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent);
+      background: transparent;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.15s;
+      outline: none;
+    }
+
+    .play-btn::before {
+      content: '';
+      position: absolute; inset: -6px;
+      border-radius: 50%;
+      border: 1px solid rgba(232,201,122,0.12);
+    }
+
+    .play-btn:hover { background: rgba(232,201,122,0.07); transform: scale(1.05); }
+    .play-btn:active { transform: scale(0.96); }
+
+    .play-icon {
+      width: 0; height: 0;
+      border-top: 11px solid transparent;
+      border-bottom: 11px solid transparent;
+      border-left: 18px solid var(--accent);
+      margin-left: 4px;
+    }
+
+    /* Removed */
+    .removed-msg {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      text-align: center;
+      animation: fadeIn 0.8s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .removed-icon { font-size: 2rem; opacity: 0.6; }
+
+    .removed-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-style: italic;
+      color: #a06060;
+      line-height: 1.6;
+    }
+
+    .removed-sub {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .divider { width: 40px; height: 1px; background: rgba(122,32,32,0.4); }
+
+    /* Status */
+    .status {
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #888;
+      animation: pulse-dot 2s ease infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .dot.live { background: #3a8c3a; }
+    .dot.offline { background: #7a2020; animation: none; }
+  </style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="card" id="card">
+
+    <!-- LOADING VIEW -->
+    <div id="loading-view">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <div class="loading-text">Connecting…</div>
+    </div>
+
+    <!-- PLAYER VIEW -->
+    <div id="player-view" style="display:none;flex-direction:column;align-items:center;gap:2rem;width:100%">
+      <div class="vinyl-wrap">
+        <div class="vinyl" id="vinyl"></div>
+      </div>
+      <div class="waveform" id="waveform"></div>
+      <div class="track-info">
+        <div class="track-title">Nocturne in D Minor</div>
+        <div class="track-artist">Original Composition</div>
+      </div>
+      <button class="play-btn" id="play-btn" aria-label="Play">
+        <div class="play-icon"></div>
+      </button>
+    </div>
+
+    <!-- REMOVED VIEW -->
+    <div class="removed-msg" id="removed-view">
+      <div class="removed-icon">⌀</div>
+      <div class="divider"></div>
+      <div class="removed-text">The author removed<br>the musical video.</div>
+      <div class="removed-sub">This content is no longer available</div>
+    </div>
+
+  </div>
+
+  <div class="status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Connecting</span>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+  // ================================================================
+  // 🔧 STEP 1: PASTE YOUR FIREBASE CONFIG HERE
+  //    Go to: Firebase Console → Your Project → Project Settings
+  //    → "Your apps" → Config (the firebaseConfig object)
+  // ================================================================
+  const firebaseConfig = {
+  apiKey: "AIzaSyBNzum5Znvx4SKoWaYbytpGBMJ9Lrhplcw",
+  authDomain: "musicalvideo-91462.firebaseapp.com",
+  projectId: "musicalvideo-91462",
+  storageBucket: "musicalvideo-91462.firebasestorage.app",
+  messagingSenderId: "70622794431",
+  appId: "1:70622794431:web:0312d4ba8971232550ac0a",
+  measurementId: "G-GMX2TPV725"
+};
+  // ================================================================
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const stateRef = db.ref('player/removed');
+
+  // Waveform bars
+  const waveform = document.getElementById('waveform');
+  const heights = [8,14,20,26,22,16,28,18,24,12,20,16,22,10,18];
+  const bars = heights.map((h, i) => {
+    const b = document.createElement('div');
+    b.className = 'bar';
+    b.style.setProperty('--d', (0.4 + Math.random() * 0.5).toFixed(2) + 's');
+    b.style.height = h + 'px';
+    b.style.animationDelay = (i * 0.05).toFixed(2) + 's';
+    waveform.appendChild(b);
+    return b;
+  });
+
+  function showPlayer() {
+    document.getElementById('loading-view').style.display = 'none';
+    document.getElementById('player-view').style.display = 'flex';
+    document.getElementById('status-dot').classList.add('live');
+    document.getElementById('status-text').textContent = 'Live';
+  }
+
+  function showRemoved() {
+    document.getElementById('loading-view').style.display = 'none';
+    document.getElementById('player-view').style.display = 'none';
+    document.getElementById('removed-view').style.display = 'flex';
+    document.getElementById('card').classList.add('removed');
+    const dot = document.getElementById('status-dot');
+    dot.classList.remove('live');
+    dot.classList.add('offline');
+    document.getElementById('status-text').textContent = 'Unavailable';
+  }
+
+  // ── Real-time listener ──
+  // Fires instantly on page load AND whenever ANY user changes the value.
+  // This means if User A clicks play, User B sees the change in real-time
+  // without even reloading the page.
+  stateRef.on('value', (snapshot) => {
+    if (snapshot.val() === true) {
+      showRemoved();
+    } else {
+      showPlayer();
+    }
+  });
+
+  // ── Play click → write true to Firebase → triggers everyone ──
+  document.getElementById('play-btn').addEventListener('click', () => {
+    document.getElementById('play-btn').disabled = true;
+    document.getElementById('vinyl').classList.add('spinning');
+    bars.forEach(b => b.classList.add('active'));
+
+    setTimeout(() => {
+      stateRef.set(true); // This triggers showRemoved() for ALL users globally
+    }, 600);
+  });
 </script>
-
 </body>
 </html>
