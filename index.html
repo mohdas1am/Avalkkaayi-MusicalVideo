@@ -1,119 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Music Page</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Debug Music Page</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-body{
-    margin:0;
-    padding:0;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:#111;
-    color:white;
-    font-family:Arial, sans-serif;
-    text-align:center;
-}
-
-#app{
-    padding:20px;
-}
-
-button{
-    padding:15px 30px;
-    font-size:20px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    background:#00c853;
-    color:white;
-}
-
-button:hover{
-    opacity:0.9;
-}
+body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial;background:#111;color:#fff;text-align:center;padding:20px}
+button{padding:14px 28px;font-size:18px}
 </style>
 </head>
-
 <body>
-
 <div id="app">Loading...</div>
 
 <script>
 const app = document.getElementById("app");
 
-// YOUR REAL SUPABASE DETAILS
 const supabaseUrl = "https://jhfqjmpjmjuzrpgqzfnz.supabase.co";
 const supabaseKey = "sb_publishable_zscaRA42u3LhgWdJ73zuOw_TFkuDorT";
 
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+async function start(){
+ try{
+   if(!window.supabase){
+     app.innerHTML = "Supabase library not loaded";
+     return;
+   }
 
-// Show removed page
-function showRemoved(){
-    document.body.style.background = "#fff";
-    document.body.style.color = "#000";
-    app.innerHTML = "<h1>The music is removed by the author</h1>";
+   const client = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+   const {data, error} = await client
+     .from("music_state")
+     .select("*");
+
+   if(error){
+     app.innerHTML = "DB Error:<br>" + error.message;
+     return;
+   }
+
+   if(!data || data.length === 0){
+     app.innerHTML = "No row found in music_state table";
+     return;
+   }
+
+   const row = data[0];
+
+   if(row.removed){
+     app.innerHTML = "<h1 style='color:black;background:white;padding:20px'>The music is removed by the author</h1>";
+     document.body.style.background="white";
+     return;
+   }
+
+   app.innerHTML = '<button onclick="removeMusic()">▶ Play Music</button>';
+
+   window.removeMusic = async function(){
+     await client.from("music_state").update({removed:true}).eq("id", row.id);
+     location.reload();
+   };
+
+ }catch(e){
+   app.innerHTML = "JS Error:<br>" + e.message;
+ }
 }
 
-// Show play button
-function showPlayer(){
-    app.innerHTML = `
-        <button onclick="removeMusic()">▶ Play Music</button>
-        <br><br>
-        <audio id="audio" src="music.mp3"></audio>
-    `;
-}
-
-// Load state from database
-async function loadState(){
-    try{
-        const { data, error } = await supabase
-            .from("music_state")
-            .select("removed")
-            .eq("id", 1)
-            .single();
-
-        if(error){
-            app.innerHTML = "<p>Error: " + error.message + "</p>";
-            return;
-        }
-
-        if(data.removed){
-            showRemoved();
-        } else {
-            showPlayer();
-        }
-
-    } catch(err){
-        app.innerHTML = "<p>" + err.message + "</p>";
-    }
-}
-
-// Click button
-async function removeMusic(){
-    const audio = document.getElementById("audio");
-    if(audio) audio.play();
-
-    await supabase
-        .from("music_state")
-        .update({ removed: true })
-        .eq("id", 1);
-
-    showRemoved();
-}
-
-// Start
-loadState();
-
-// Auto refresh every 2 sec for other users
-setInterval(loadState, 2000);
+start();
 </script>
-
 </body>
 </html>
