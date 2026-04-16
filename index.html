@@ -4,18 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Music Player</title>
-         
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Courier+Prime&display=swap" rel="stylesheet"/>
-<!-- =========================GOOGLE ANALYTICS SETUPReplace G-XXXXXXXXXX with your real Measurement ID ========================= -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-LXLV473CZP"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-LXLV473CZP');
-</script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LXLV473CZP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-LXLV473CZP');
+  </script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -40,8 +39,7 @@
 
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
       pointer-events: none;
       z-index: 0;
@@ -68,12 +66,8 @@
       gap: 2rem;
       width: 340px;
       box-shadow: 0 8px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.03);
-      transition: border-color 0.6s;
     }
 
-    .card.removed { border-color: rgba(122, 32, 32, 0.3); }
-
-    /* Vinyl */
     .vinyl-wrap { position: relative; width: 120px; height: 120px; }
 
     .vinyl {
@@ -85,6 +79,7 @@
       box-shadow: 0 4px 30px rgba(0,0,0,0.6);
       animation: spin 4s linear infinite;
       animation-play-state: paused;
+      transition: opacity 0.3s;
     }
 
     .vinyl::after {
@@ -99,13 +94,13 @@
     }
 
     .vinyl.spinning { animation-play-state: running; }
+    .vinyl.dim { opacity: 0.25; filter: grayscale(1); }
 
     @keyframes spin {
       from { transform: rotate(0deg); }
       to   { transform: rotate(360deg); }
     }
 
-    /* Waveform */
     .waveform { display: flex; align-items: center; gap: 3px; height: 28px; }
 
     .bar {
@@ -126,7 +121,6 @@
       to   { transform: scaleY(1); }
     }
 
-    /* Track info */
     .track-info { text-align: center; }
 
     .track-title {
@@ -134,6 +128,7 @@
       font-size: 1.2rem;
       font-weight: 700;
       color: var(--text);
+      transition: color 0.3s;
     }
 
     .track-artist {
@@ -153,7 +148,7 @@
       background: transparent;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: background 0.2s, transform 0.15s;
+      transition: background 0.2s, transform 0.15s, border-color 0.3s;
       outline: none;
     }
 
@@ -173,71 +168,48 @@
       border-bottom: 11px solid transparent;
       border-left: 18px solid var(--accent);
       margin-left: 4px;
+      transition: opacity 0.3s;
     }
 
-    /* Removed */
-    .removed-msg {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.2rem;
-      text-align: center;
-      animation: fadeIn 0.8s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .removed-icon { font-size: 2rem; opacity: 0.6; }
-
-    .removed-text {
-      font-family: 'Playfair Display', serif;
-      font-size: 1rem;
-      font-style: italic;
-      color: #a06060;
-      line-height: 1.6;
-    }
-
-    .removed-sub {
-      font-size: 0.68rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+    /* Hint message below button */
+    .hint {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
       color: var(--muted);
+      min-height: 1rem;
+      text-align: center;
+      transition: opacity 0.4s;
+      opacity: 0;
     }
 
-    .divider { width: 40px; height: 1px; background: rgba(122,32,32,0.4); }
+    .hint.visible { opacity: 1; }
+
+    /* Subtle shake animation on button when "buffering" */
+    @keyframes wiggle {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+
+    .play-btn.wiggle { animation: wiggle 0.3s ease; }
   </style>
 </head>
 <body>
 
 <div class="scene">
   <div class="card" id="card">
-
-    <!-- PLAYER VIEW -->
-    <div id="player-view" style="display:flex;flex-direction:column;align-items:center;gap:2rem;width:100%">
-      <div class="vinyl-wrap">
-        <div class="vinyl" id="vinyl"></div>
-      </div>
-      <div class="waveform" id="waveform"></div>
-      <div class="track-info">
-        <div class="track-title">Nocturne in D Minor</div>
-        <div class="track-artist">Original Composition</div>
-      </div>
-      <button class="play-btn" id="play-btn" aria-label="Play">
-        <div class="play-icon"></div>
-      </button>
+    <div class="vinyl-wrap">
+      <div class="vinyl" id="vinyl"></div>
     </div>
-
-    <!-- REMOVED VIEW -->
-    <div class="removed-msg" id="removed-view">
-      <div class="removed-icon">⌀</div>
-      <div class="divider"></div>
-      <div class="removed-text">The author removed<br>the musical video.</div>
-      <div class="removed-sub">This content is no longer available</div>
+    <div class="waveform" id="waveform"></div>
+    <div class="track-info">
+      <div class="track-title" id="track-title">Nocturne in D Minor</div>
+      <div class="track-artist">Original Composition</div>
     </div>
-
+    <button class="play-btn" id="play-btn" aria-label="Play">
+      <div class="play-icon"></div>
+    </button>
+    <div class="hint" id="hint"></div>
   </div>
 </div>
 
@@ -255,27 +227,66 @@
     return b;
   });
 
-  function showRemoved() {
-    document.getElementById('player-view').style.display = 'none';
-    document.getElementById('removed-view').style.display = 'flex';
-    document.getElementById('card').classList.add('removed');
-  }
+  // Fool messages shown after each click
+  const foolMessages = [
+    "Buffering... click again to resume",
+    "Connection dropped. Try once more!",
+    "Almost there... one more click!",
+    "Server busy. Click to retry.",
+    "Audio codec loading... click to continue",
+    "Tap again to confirm playback",
+    "Still loading... click once more!",
+    "Just a sec — click to reconnect",
+  ];
 
-  // On page load — check if this user already clicked play before
-  if (localStorage.getItem('music_removed') === 'true') {
-    showRemoved();
-  }
+  let clickCount = 0;
+  let lastSpin = null;
 
-  // Play button click
-  document.getElementById('play-btn').addEventListener('click', () => {
-    document.getElementById('play-btn').disabled = true;
-    document.getElementById('vinyl').classList.add('spinning');
+  const playBtn = document.getElementById('play-btn');
+  const vinyl   = document.getElementById('vinyl');
+  const hint    = document.getElementById('hint');
+  const title   = document.getElementById('track-title');
+
+  playBtn.addEventListener('click', () => {
+    clickCount++;
+
+    // ── GA event: every single click with count ──
+    gtag('event', 'play_button_clicked', {
+      event_category: 'music_player',
+      event_label: 'Play button clicked',
+      click_count: clickCount,        // custom dimension — how many times this session
+      value: clickCount
+    });
+
+    // First click gets its own event so you can count unique first-clickers
+    if (clickCount === 1) {
+      gtag('event', 'play_first_click', {
+        event_category: 'music_player',
+        event_label: 'First click this session'
+      });
+    }
+
+    // Brief spin to look like it's trying
+    vinyl.classList.remove('dim');
+    vinyl.classList.add('spinning');
     bars.forEach(b => b.classList.add('active'));
+    if (lastSpin) clearTimeout(lastSpin);
 
-    setTimeout(() => {
-      localStorage.setItem('music_removed', 'true'); // remember for this user
-      showRemoved();
-    }, 600);
+    lastSpin = setTimeout(() => {
+      vinyl.classList.remove('spinning');
+      vinyl.classList.add('dim');
+      bars.forEach(b => b.classList.remove('active'));
+    }, 800);
+
+    // Wiggle button
+    playBtn.classList.remove('wiggle');
+    void playBtn.offsetWidth; // reflow to restart animation
+    playBtn.classList.add('wiggle');
+
+    // Show a fool message
+    const msg = foolMessages[(clickCount - 1) % foolMessages.length];
+    hint.textContent = msg;
+    hint.classList.add('visible');
   });
 </script>
 </body>
