@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Page</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial,sans-serif;background:#111;color:#fff}#app{text-align:center}button{padding:14px 28px;font-size:18px;border:none;border-radius:10px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app">Loading...</div>
+<script>
+const supabaseUrl='https://jhfqjmpjmjuzrpgqzfnz.supabase.co';
+const supabaseKey='sb_publishable_zscaRA42u3LhgWdJ73zuOw_TFkuDorT';
+const supabase=window.supabase.createClient(supabaseUrl,supabaseKey);
+const app=document.getElementById('app');
+
+function showRemoved(){document.body.style.background='#fff';document.body.style.color='#000';app.innerHTML='<h1>The music is removed by the author</h1>';}
+function showPlayer(){app.innerHTML='<button onclick="removeMusic()">▶ Play</button><audio id="audio"></audio>';}
+
+async function loadState(){
+ const {data,error}=await supabase.from('music_state').select('removed').eq('id',1).single();
+ if(data && data.removed) showRemoved(); else showPlayer();
+}
+async function removeMusic(){
+ const audio=document.getElementById('audio'); if(audio) audio.play();
+ await supabase.from('music_state').update({removed:true}).eq('id',1);
+ showRemoved();
+}
+loadState();
+setInterval(loadState,2000);
+</script>
+</body>
+</html>
