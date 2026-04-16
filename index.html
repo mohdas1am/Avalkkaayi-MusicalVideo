@@ -1,213 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Music Player</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Courier+Prime&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Visitor Tracking Website</title>
 
-    :root {
-      --bg: #0c0c0e;
-      --surface: #141418;
-      --accent: #e8c97a;
-      --text: #e8e4dc;
-      --muted: #6b6660;
-    }
+<!-- =========================
+     GOOGLE ANALYTICS SETUP
+     Replace G-XXXXXXXXXX with your real Measurement ID
+========================= -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LXLV473CZP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
 
-    body {
-      min-height: 100vh;
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Courier Prime', monospace;
-      color: var(--text);
-      overflow: hidden;
-    }
+  gtag('config', 'G-LXLV473CZP');
+</script>
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.4;
-    }
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-    .scene {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2rem;
-    }
+body{
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#0f0f0f,#1f1f1f,#2b2b2b);
+    color:white;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
 
-    .card {
-      background: var(--surface);
-      border: 1px solid rgba(232, 201, 122, 0.15);
-      border-radius: 2px;
-      padding: 3rem 3.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2rem;
-      width: 340px;
-      box-shadow: 0 8px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.03);
-      transition: border-color 0.6s;
-    }
+.container{
+    width:100%;
+    max-width:600px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:20px;
+    padding:35px;
+    text-align:center;
+    backdrop-filter:blur(10px);
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+}
 
-    .card.removed { border-color: rgba(122, 32, 32, 0.3); }
+h1{
+    font-size:2rem;
+    margin-bottom:15px;
+}
 
-    /* Loading */
-    #loading-view { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+p{
+    color:#ddd;
+    line-height:1.6;
+    margin-bottom:25px;
+}
 
-    .loading-dots { display: flex; gap: 6px; }
-    .loading-dots span {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--muted);
-      animation: blink 1.2s ease infinite;
-    }
-    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+button{
+    background:#ffffff;
+    color:#111;
+    border:none;
+    padding:14px 28px;
+    font-size:1rem;
+    border-radius:10px;
+    cursor:pointer;
+    transition:0.3s;
+    margin:8px;
+}
 
-    @keyframes blink {
-      0%,80%,100% { opacity: 0.2; }
-      40% { opacity: 1; }
-    }
+button:hover{
+    transform:translateY(-2px);
+    opacity:0.9;
+}
 
-    .loading-text {
-      font-size: 0.68rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
+.stats{
+    margin-top:25px;
+    font-size:0.95rem;
+    color:#ccc;
+}
 
-    /* Vinyl */
-    .vinyl-wrap { position: relative; width: 120px; height: 120px; }
+.footer{
+    margin-top:25px;
+    font-size:0.85rem;
+    color:#999;
+}
+</style>
+</head>
+<body>
 
-    .vinyl {
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 50% 50%, #1a1a1a 18%, transparent 18%),
-        repeating-radial-gradient(circle at 50% 50%, #1c1c1e 0px, #111113 2px, #1c1c1e 4px);
-      box-shadow: 0 4px 30px rgba(0,0,0,0.6);
-      animation: spin 4s linear infinite;
-      animation-play-state: paused;
-    }
+<div class="container">
+    <h1>Welcome</h1>
+    <p>
+        This website is deployed on GitHub Pages and tracks visitors using Google Analytics.
+        Every visit and button click can be viewed in your Analytics dashboard.
+    </p>
 
-    .vinyl::after {
-      content: '';
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px #111113, 0 0 0 5px rgba(232,201,122,0.2);
-    }
+    <button onclick="enterSite()">Enter Website</button>
+    <button onclick="trackSpecialClick()">Special Click</button>
 
-    .vinyl.spinning { animation-play-state: running; }
+    <div class="stats" id="status">
+        Visitor tracking is active.
+    </div>
 
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
+    <div class="footer">
+        Replace the Google Analytics ID before deployment.
+    </div>
+</div>
 
-    /* Waveform */
-    .waveform { display: flex; align-items: center; gap: 3px; height: 28px; }
+<script>
+/* Track page load custom event */
+window.onload = function(){
+    gtag('event', 'page_loaded', {
+        event_category: 'engagement',
+        event_label: 'Main Page Loaded'
+    });
+};
 
-    .bar {
-      width: 3px; border-radius: 2px;
-      background: var(--accent);
-      opacity: 0.3;
-      transform-origin: bottom;
-      transition: opacity 0.4s;
-    }
+/* Button 1 */
+function enterSite(){
+    gtag('event', 'enter_website', {
+        event_category: 'button',
+        event_label: 'Enter Website Button'
+    });
 
-    .bar.active {
-      opacity: 1;
-      animation: bounce var(--d, 0.6s) ease-in-out infinite alternate;
-    }
+    document.getElementById("status").innerText =
+        "Enter Website button clicked and tracked.";
 
-    @keyframes bounce {
-      from { transform: scaleY(0.2); }
-      to   { transform: scaleY(1); }
-    }
+    alert("Welcome to the website!");
+}
 
-    /* Track info */
-    .track-info { text-align: center; }
+/* Button 2 */
+function trackSpecialClick(){
+    gtag('event', 'special_click', {
+        event_category: 'button',
+        event_label: 'Special Click Button'
+    });
 
-    .track-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--text);
-    }
+    document.getElementById("status").innerText =
+        "Special click tracked successfully.";
+}
 
-    .track-artist {
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-top: 0.3rem;
-    }
+/* Scroll Tracking */
+window.addEventListener("scroll", function(){
+    gtag('event', 'scroll_activity', {
+        event_category: 'engagement',
+        event_label: 'User Scrolled Page'
+    });
+});
+</script>
 
-    /* Play button */
-    .play-btn {
-      position: relative;
-      width: 64px; height: 64px;
-      border-radius: 50%;
-      border: 1.5px solid var(--accent);
-      background: transparent;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.2s, transform 0.15s;
-      outline: none;
-    }
-
-    .play-btn::before {
-      content: '';
-      position: absolute; inset: -6px;
-      border-radius: 50%;
-      border: 1px solid rgba(232,201,122,0.12);
-    }
-
-    .play-btn:hover { background: rgba(232,201,122,0.07); transform: scale(1.05); }
-    .play-btn:active { transform: scale(0.96); }
-
-    .play-icon {
-      width: 0; height: 0;
-      border-top: 11px solid transparent;
-      border-bottom: 11px solid transparent;
-      border-left: 18px solid var(--accent);
-      margin-left: 4px;
-    }
-
-    /* Removed */
-    .removed-msg {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.2rem;
-      text-align: center;
-      animation: fadeIn 0.8s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .removed-icon { font-size: 2rem; opacity: 0.6; }
-
-    .divider { width: 40px; height: 1px; background: rgba(122,32,32,0.4); }
-
+</body>
+</html>
     .removed-text {
       font-family: 'Playfair Display', serif;
       font-size: 1rem;
