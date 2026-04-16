@@ -6,7 +6,6 @@
   <title>Music Player</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Courier+Prime&display=swap" rel="stylesheet"/>
   <style>
-    /* ... (your existing CSS remains the same) ... */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -32,7 +31,7 @@
       content: '';
       position: fixed;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3Cfilter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
       pointer-events: none;
       z-index: 0;
       opacity: 0.4;
@@ -202,7 +201,7 @@
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
-      to   { transform: translateY(1); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .removed-icon { font-size: 2rem; opacity: 0.6; }
@@ -294,8 +293,7 @@
 <script type="module">
   // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  // import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js"; // Temporarily commented out
-  import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, onValue, transaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // Your web app's Firebase configuration
   const firebaseConfig = {
@@ -305,19 +303,18 @@
     storageBucket: "musicalvideo-91462.firebasestorage.app",
     messagingSenderId: "70622794431",
     appId: "1:70622794431:web:0312d4ba8971232550ac0a",
-    // measurementId: "G-GMX2TPV725" // Temporarily commented out
+    measurementId: "G-GMX2TPV725" // Keep this for completeness, but Analytics imports are omitted for CSP
   };
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  // const analytics = getAnalytics(app); // Temporarily commented out
   
   // Get Realtime Database service
   const db = getDatabase(app);
   // Create a reference to 'player/removed' in the database
   const stateRef = ref(db, 'player/removed');
 
-  // Waveform bars (existing code)
+  // Waveform bars
   const waveform = document.getElementById('waveform');
   const heights = [8,14,20,26,22,16,28,18,24,12,20,16,22,10,18];
   const bars = heights.map((h, i) => {
@@ -335,6 +332,19 @@
     document.getElementById('player-view').style.display = 'flex';
     document.getElementById('status-dot').classList.add('live');
     document.getElementById('status-text').textContent = 'Live';
+    document.getElementById('play-btn').disabled = false; // Enable play button if available
+    document.getElementById('vinyl').classList.remove('spinning');
+    bars.forEach(b => b.classList.remove('active'));
   }
 
-  function showRemovedNo response
+  function showRemoved() {
+    document.getElementById('loading-view').style.display = 'none';
+    document.getElementById('player-view').style.display = 'none';
+    document.getElementById('removed-view').style.display = 'flex';
+    document.getElementById('card').classList.add('removed');
+    const dot = document.getElementById('status-dot');
+    dot.classList.remove('live');
+    dot.classList.add('offline');
+    document.getElementById('status-text').textContent = 'Unavailable';
+    document.getElementById('play-btn').disabled = true; // Always disable if removed
+    document.getElementById('vinyl').classList.remove('spinning');No response
