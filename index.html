@@ -6,6 +6,7 @@
   <title>Music Player</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Courier+Prime&display=swap" rel="stylesheet"/>
   <style>
+    /* ... (your existing CSS remains the same) ... */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -201,7 +202,7 @@
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
+      to   { transform: translateY(1); }
     }
 
     .removed-icon { font-size: 2rem; opacity: 0.6; }
@@ -293,7 +294,7 @@
 <script type="module">
   // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+  // import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js"; // Temporarily commented out
   import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   // Your web app's Firebase configuration
@@ -303,4 +304,37 @@
     projectId: "musicalvideo-91462",
     storageBucket: "musicalvideo-91462.firebasestorage.app",
     messagingSenderId: "70622794431",
-    appId: "1:70622794431:web:0312d4ba8971232550ac0aNo response
+    appId: "1:70622794431:web:0312d4ba8971232550ac0a",
+    // measurementId: "G-GMX2TPV725" // Temporarily commented out
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  // const analytics = getAnalytics(app); // Temporarily commented out
+  
+  // Get Realtime Database service
+  const db = getDatabase(app);
+  // Create a reference to 'player/removed' in the database
+  const stateRef = ref(db, 'player/removed');
+
+  // Waveform bars (existing code)
+  const waveform = document.getElementById('waveform');
+  const heights = [8,14,20,26,22,16,28,18,24,12,20,16,22,10,18];
+  const bars = heights.map((h, i) => {
+    const b = document.createElement('div');
+    b.className = 'bar';
+    b.style.setProperty('--d', (0.4 + Math.random() * 0.5).toFixed(2) + 's');
+    b.style.height = h + 'px';
+    b.style.animationDelay = (i * 0.05).toFixed(2) + 's';
+    waveform.appendChild(b);
+    return b;
+  });
+
+  function showPlayer() {
+    document.getElementById('loading-view').style.display = 'none';
+    document.getElementById('player-view').style.display = 'flex';
+    document.getElementById('status-dot').classList.add('live');
+    document.getElementById('status-text').textContent = 'Live';
+  }
+
+  function showRemovedNo response
